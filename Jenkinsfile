@@ -1,37 +1,40 @@
-node{
-     
-    def mavenHome = tool name: "maven 3 8 2"
-    
-    stage('CodeCheckOut')
-    {
-        git credentialsId: 'eae12175-15d1-4312-9832-5dcee222462c', url: 'https://github.com/manoj541/Jenkins-CI-Job.git'
-    }
-    stage('CodeBuild')
-    {
-        sh "${mavenHome}/bin/mvn clean package"
-    }
-    stage('SonarQubeReport')
-    {
-        sh "${mavenHome}/bin/mvn clean sonar:sonar package"
-    }
-     /*
-    stage('UploadArticatintoNexus')
-    {
-        sh "${mavenHome}/bin/mvn clean deploy "
-    }
-    */
-    stage('DeployAppIntoTomcat')
-    {
-        sshagent(['e81ea2c1-bc18-475b-a14d-3b655fcf6217']){
-        sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@18.237.136.56:/opt/tomcat9/webapps/" 
-    } 
-    stage('SendEmailNotification')
-    {
-        emailext body: '''Deployment is Success
+pipeline{
+agent any
 
-        Regards
-        Manoj kumar
-        DevOps Team''', subject: 'Deployment is Success', to: 'manojkumar4cs@gmail.com'
-    }    
+tools{
+maven 'maven-3.8.4'
+}
+
+stages{
+  stage('GIT CheckOutCode'){
+    steps{
+    git credentialsId: '12035451-f4d9-4f48-842a-cc591636fe83', url: 'https://github.com/Manoj-0218/maven-web-application.git'
+   }
+  }
+stage('Build'){
+  steps{
+    sh "mvn clean package"
+   }	
+  }
+  
+stage('SonarQube Report'){
+  steps{
+    sh "mvn clean sonar:sonar"
+   }	
+  }
+stage ('UploadArtifactsIntoNexus'){
+  steps{
+    sh "mvn clean deploy"
+   }
+  }
+  
+stage('DeployToTomcat'){
+    steps{
+    sshagent(['12035451-f4d9-4f48-842a-cc591636fe83']) {
+    sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@3.111.197.60:/opt/apache-tomcat-9.0.58/webapps/"
+}
+}
+}
+ 
 }
 }
